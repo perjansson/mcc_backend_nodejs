@@ -5,7 +5,7 @@ var http = require('http');
 var httpServer = http.createServer(function(request, response) {
   logMessage((new Date()) + ' Received request for ' + request.url);
   response.writeHead(200, {'Content-type': 'text/plain'});
-  response.end('MCC backend server started :)\n');
+  response.end('Hello MCC node.js server :)\n');
 });
 
 httpServer.listen(port, function() {
