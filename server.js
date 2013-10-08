@@ -1,6 +1,7 @@
 var port = 1337;
 
 var http = require('http');
+var moment = require('moment');
 
 var httpServer = http.createServer(function(request, response) {
   logMessage((new Date()) + ' Received request for ' + request.url);
@@ -26,7 +27,7 @@ wsServer.on('request', function(request) {
 
   connection.on('message', function(message) {
     var meeting = JSON.parse(message.utf8Data);
-    logMessage(new Date().getTime());
+    logMessage(moment().format('MMMM Do YYYY, h:mm:ss a'));
     logMessage('Meeting ' + meeting.status + ':' + JSON.stringify(meeting, null, 4));
   });
   
