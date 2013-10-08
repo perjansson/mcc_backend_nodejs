@@ -31,12 +31,12 @@ webSocketServer.on('request', function(request) {
   });
   
   connection.on('close', function(reasonCode, description) {
-    logMessage(connection.remoteAddress + ' disconnected.');
+    logMessage(connection.remoteAddress + ' disconnected with reasonCode: ' + reasonCode + ' and description: ' + description);
   });
 
 });
 
 function logMessage(message) {
-  console.log(moment().format('MMMM Do YYYY, h:mm:ss a')); 
+  console.log('### ' + moment().format('MMMM Do YYYY, h:mm:ss a')); 
   console.log(message);
 }
