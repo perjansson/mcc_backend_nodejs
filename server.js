@@ -26,6 +26,7 @@ wsServer.on('request', function(request) {
 
   connection.on('message', function(message) {
     var meeting = JSON.parse(message.utf8Data);
+    logMessage(new Date().getTime());
     logMessage('Meeting ' + meeting.status + ':' + JSON.stringify(meeting, null, 4));
   });
   
