@@ -16,27 +16,27 @@ httpServer.listen(port, function() {
 
 var WebSocketServer = require('websocket').server;
 
-wsServer = new WebSocketServer({
+webSocketServer = new WebSocketServer({
   httpServer: httpServer,
   autoAcceptConnections: false
 });
 
-wsServer.on('request', function(request) {
+webSocketServer.on('request', function(request) {
   var connection = request.accept();
-  logMessage('WebSocket connection accepted on server side using Node.js :)');
+  logMessage('WebSocket connection accepted on server side from ' + connection.remoteAddress + ' using Node.js :)');
 
   connection.on('message', function(message) {
     var meeting = JSON.parse(message.utf8Data);
-    logMessage(moment().format('MMMM Do YYYY, h:mm:ss a'));
     logMessage('Meeting ' + meeting.status + ':' + JSON.stringify(meeting, null, 4));
   });
   
   connection.on('close', function(reasonCode, description) {
-    logMessage((new Date()) + ' Peer ' + connection.remoteAddress + ' disconnected.');
+    logMessage(connection.remoteAddress + ' disconnected.');
   });
 
 });
 
 function logMessage(message) {
+  console.log(moment().format('MMMM Do YYYY, h:mm:ss a')); 
   console.log(message);
 }
