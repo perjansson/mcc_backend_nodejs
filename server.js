@@ -1,39 +1,38 @@
 var port = 1337;
 
-var http = require('http');
-var moment = require('moment');
+var app = require('http').createServer(handler)
+  , io = require('socket.io').listen(app)
+  , fs = require('fs')
+  , moment = require('moment')
+  , uuid = require('node-uuid')
 
-var httpServer = http.createServer(function(request, response) {
-  logMessage((new Date()) + ' Received request for ' + request.url);
-  response.writeHead(200, {'Content-type': 'text/plain'});
-  response.end('Hello MCC node.js server :)\n');
-});
+app.listen(port);
 
-httpServer.listen(port, function() {
-  logMessage('HTTP server is listening on port ' + port);
-});
+function handler (req, res) {
+  fs.readFile(__dirname + '/index.html',
+  function (err, data) {
+    if (err) {
+      res.writeHead(500);
+      return res.end('Error loading index.html');
+    }
 
-
-var WebSocketServer = require('websocket').server;
-
-webSocketServer = new WebSocketServer({
-  httpServer: httpServer,
-  autoAcceptConnections: false
-});
-
-webSocketServer.on('request', function(request) {
-  var connection = request.accept();
-  logMessage('WebSocket connection accepted on server side from ' + connection.remoteAddress + ' using Node.js :)');
-
-  connection.on('message', function(message) {
-    var meeting = JSON.parse(message.utf8Data);
-    logMessage('Meeting ' + meeting.status + ':' + JSON.stringify(meeting, null, 4));
+    res.writeHead(200);
+    res.end(data);
   });
-  
-  connection.on('close', function(reasonCode, description) {
-    logMessage(connection.remoteAddress + ' disconnected with reasonCode: ' + reasonCode + ' and description: ' + description);
-  });
+}
 
+io.sockets.on('connection', function (socket) {
+  var onConnectionMessage = 'WebSocket connection accepted on server side from using Node.js :)';
+  socket.emit('connection', onConnectionMessage);
+
+  socket.on('meeting update', function (data) {
+    var meeting = JSON.parse(data);
+    /*logMessage('Meeting ' + meeting.status + ':' + JSON.stringify(meeting, null, 4));*/
+    if (meeting.id == null || meeting.id == '') {
+      meeting.id = uuid.v4();
+    }
+    socket.emit('message', meeting);
+  });
 });
 
 function logMessage(message) {
