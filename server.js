@@ -22,12 +22,9 @@ function handler (req, res) {
 }
 
 io.sockets.on('connection', function (socket) {
-  var onConnectionMessage = 'WebSocket connection accepted on server side from using Node.js :)';
-  socket.emit('connection', onConnectionMessage);
-
   socket.on('meeting update', function (data) {
     var meeting = JSON.parse(data);
-    /*logMessage('Meeting ' + meeting.status + ':' + JSON.stringify(meeting, null, 4));*/
+    logMessage('Meeting ' + meeting.status + ':' + JSON.stringify(meeting, null, 4));
     if (meeting.id == null || meeting.id == '') {
       meeting.id = uuid.v4();
     }
