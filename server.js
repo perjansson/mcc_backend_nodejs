@@ -9,6 +9,7 @@ var app = require('http').createServer(handler)
 app.listen(port);
 
 function handler (req, res) {
+  logMessage('Create server handler');
   var response = '';
 
   var cradle = require('cradle');
