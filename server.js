@@ -1,6 +1,6 @@
 var port = 1337;
 
-var app = require('http').createServer(initDbHandler)
+var app = require('http').createServer(dummyHandler)
   , io = require('socket.io').listen(app)
   , fs = require('fs')
   , moment = require('moment')
