@@ -14,7 +14,7 @@ function handler (req, http_res) {
   var response = '';
 
   var cradle = require('cradle');
-  var connection = new(cradle.Connection)('http://per_jansson:8sP50bjSk3@81.169.133.153:5984/mcc', 443, {
+  var connection = new(cradle.Connection)('81.169.133.153', {
       auth: { username: 'per_jansson', password: '8sP50bjSk3' }
   });
 
