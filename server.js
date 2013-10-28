@@ -1,6 +1,6 @@
 var port = 1337;
 
-var app = require('http').createServer(dummyHandler)
+var app = require('http').createServer(handler)
   , io = require('socket.io').listen(app)
   , fs = require('fs')
   , moment = require('moment')
@@ -8,42 +8,17 @@ var app = require('http').createServer(dummyHandler)
 
 app.listen(port);
 
-function dummyHandler (req, http_res) {
-  logMessage('Running dummyHandler in create server');
-  http_res.writeHead(200, {'Content-Type': 'text/plain'});
-  var response = 'Response from dummy handler';
-  http_res.end(response);
-}
-
-function initDbHandler (req, http_res) {
-  logMessage('Running initDbHandler in create server');
-  http_res.writeHead(200, {'Content-Type': 'text/plain'});
-  var response = '';
-
-  var cradle = require('cradle');
-  var connection = new(cradle.Connection)('81.169.133.153', {
-      auth: { username: 'per_jansson', password: '8sP50bjSk3' }
-  });
-
-  var db = connection.database('mcc');
-  db.save('nodeJsBackendWelcomeMessage', {
-      message: 'Node.js backend for Meeting Cost Calculator d-(*_*)z'
-  }, function (err, res) {
+function handler (req, res) {
+  fs.readFile(__dirname + '/index.html',
+  function (err, data) {
     if (err) {
-        // Handle error
-        logMessage(err);
-        response += ' SAVE ERROR: Could not save record!!\n';
-    } else {
-        // Handle success
-        logMessage(res);
-        response += ' SUCESSFUL SAVE\n';
+      res.writeHead(500);
+      return res.end('Error loading index.html :(');
     }
-    db.get('document_key', function (err, doc) {
-        response += ' DOCUMENT: ' + doc + '\n';
-        http_res.end(response);
-    });
-  });
 
+    res.writeHead(200);
+    res.end(data);
+  });
 }
 
 io.sockets.on('connection', function (socket) {
@@ -54,7 +29,7 @@ io.sockets.on('connection', function (socket) {
       meeting.id = uuid.v4();
     }
 
-    /* TODO: Persist meeting */
+
 
     socket.emit('meeting update response', meeting);
   });
