@@ -1,4 +1,4 @@
-var port = 1337;
+var port = 1338;
 
 var app = require('http').createServer(dummyHandler)
   , io = require('socket.io').listen(app)
