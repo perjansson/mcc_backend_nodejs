@@ -8,8 +8,8 @@ var app = require('http').createServer(handler)
 
 app.listen(port);
 
-function handler (req, res) {
-  logMessage('Create server handler');
+function handler (req, http_res) {
+  http_res.writeHead(200, {'Content-Type': 'text/plain'});
   var response = '';
 
   var cradle = require('cradle');
@@ -23,19 +23,19 @@ function handler (req, res) {
   }, function (err, res) {
     if (err) {
         // Handle error
+        logMessage(err);
         response += ' SAVE ERROR: Could not save record!!\n';
     } else {
         // Handle success
+        logMessage(res);
         response += ' SUCESSFUL SAVE\n';
     }
     db.get('document_key', function (err, doc) {
         response += ' DOCUMENT: ' + doc + '\n';
-        res.end(response);
+        http_res.end(response);
     });
   });
 
-  res.writeHead(200, {'Content-Type': 'text/plain'});
-  res.end(response);
 }
 
 io.sockets.on('connection', function (socket) {
@@ -46,7 +46,7 @@ io.sockets.on('connection', function (socket) {
       meeting.id = uuid.v4();
     }
 
-
+    /* TODO: Persist meeting */
 
     socket.emit('meeting update response', meeting);
   });
