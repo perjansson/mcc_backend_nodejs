@@ -9,6 +9,7 @@ var app = require('http').createServer(handler)
 app.listen(port);
 
 function handler (req, http_res) {
+  logMessage('Running handler in create server');
   http_res.writeHead(200, {'Content-Type': 'text/plain'});
   var response = '';
 
