@@ -1,6 +1,6 @@
 var port = 1337;
 
-var app = require('http').createServer(handler)
+var app = require('http').createServer(dummyHandler)
   , io = require('socket.io').listen(app)
   , fs = require('fs')
   , moment = require('moment')
@@ -8,8 +8,15 @@ var app = require('http').createServer(handler)
 
 app.listen(port);
 
-function handler (req, http_res) {
-  logMessage('Running handler in create server');
+function dummyHandler (req, http_res) {
+  logMessage('Running dummyHandler in create server');
+  http_res.writeHead(200, {'Content-Type': 'text/plain'});
+  var response = 'Response from dummy handler';
+  http_res.end(response);
+}
+
+function initDbHandler (req, http_res) {
+  logMessage('Running initDbHandler in create server');
   http_res.writeHead(200, {'Content-Type': 'text/plain'});
   var response = '';
 
