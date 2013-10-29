@@ -8,55 +8,49 @@ var app = require('http').createServer(initDbHandler)
 
 app.listen(port);
 
-function dummyHandler (req, http_res) {
-  logMessage('Running dummyHandler in create server');
-  http_res.writeHead(200, {'Content-Type': 'text/plain'});
-  var response = 'Response from dummy handler';
-  http_res.end(response);
-}
+var db = null;
 
 function initDbHandler (req, http_res) {
-  logMessage('Running initDbHandler in create server');
-  http_res.writeHead(200, {'Content-Type': 'text/plain'});
-  var response = '';
-
-  var cradle = require('cradle');
-  var connection = new(cradle.Connection)('81.169.133.153', {
-      auth: { username: 'per_jansson', password: '8sP50bjSk3' }
-  });
-
-  var db = connection.database('mcc');
-  db.save('nodeJsBackendWelcomeMessage', { "message": "Node.js backend for Meeting Cost Calculator d-(*_*)z" }, 
-    function (err, res) {
-    if (err) {
-        // Handle error
-        logMessage('Error: ' + err);
-        response += ' SAVE ERROR: Could not save record!!\n';
-    } else {
-        // Handle success
-        logMessage('Success: ' + res);
-        response += ' SUCESSFUL SAVE\n';
-    }
-    db.get('document_key', function (err, doc) {
-        logMessage('Get: ' + doc);
-        response += ' DOCUMENT: ' + doc + '\n';
-        http_res.end(response);
+  if (db == null) {
+    var cradle = require('cradle');
+    var connection = new(cradle.Connection)('81.169.133.153', {
+        auth: { username: 'per_jansson', password: '8sP50bjSk3' }
     });
-  });
 
+    db = connection.database('mcc');
+
+    logMessage('Successfully connected to couchdb');
+    if (req != null && http_res != null) {
+      http_res.writeHead(200, {'Content-Type': 'text/plain'});
+      http_res.end('Node.js server up and running d-(*_*)z');
+    }
+  }
 }
 
 io.sockets.on('connection', function (socket) {
   socket.on('meeting update request', function (data) {
+    initDbHandler();
+
     var meeting = JSON.parse(data);
-    logMessage('Meeting ' + meeting.status + ':' + JSON.stringify(meeting, null, 4));
+    /*logMessage('Meeting ' + meeting.status + ':' + JSON.stringify(meeting, null, 4));*/
     if (meeting.id == null || meeting.id == '') {
       meeting.id = uuid.v4();
+      logMessage('Generated new id: ' + meeting.id);
     }
 
-    /* TODO: Persist meeting */
-
-    socket.emit('meeting update response', meeting);
+    db.save(meeting.id, meeting, function (err, res) {
+      if (err) {
+          // Handle error
+          logMessage('Error saving meeting with id: ' + meeting.id + ' Error: ' + err);
+      } else {
+          // Handle success
+          logMessage('Success saving meeting with id: ' + meeting.id);
+      }
+      /*db.get(meeting.id, function (err, meeting) {
+          logMessage('Success getting meeting with id: ' + meeting.id);*/
+          socket.emit('meeting update response', meeting);
+      /*});*/
+    });
   });
 });
 
