@@ -1,6 +1,6 @@
 var port = 1337;
 
-var app = require('http').createServer(dummyHandler)
+var app = require('http').createServer(initDbHandler)
   , io = require('socket.io').listen(app)
   , fs = require('fs')
   , moment = require('moment')
@@ -26,19 +26,19 @@ function initDbHandler (req, http_res) {
   });
 
   var db = connection.database('mcc');
-  db.save('nodeJsBackendWelcomeMessage', {
-      message: 'Node.js backend for Meeting Cost Calculator d-(*_*)z'
-  }, function (err, res) {
+  db.save('nodeJsBackendWelcomeMessage', { "message": "Node.js backend for Meeting Cost Calculator d-(*_*)z" }, 
+    function (err, res) {
     if (err) {
         // Handle error
-        logMessage(err);
+        logMessage('Error: ' + err);
         response += ' SAVE ERROR: Could not save record!!\n';
     } else {
         // Handle success
-        logMessage(res);
+        logMessage('Success: ' + res);
         response += ' SUCESSFUL SAVE\n';
     }
     db.get('document_key', function (err, doc) {
+        logMessage('Get: ' + doc);
         response += ' DOCUMENT: ' + doc + '\n';
         http_res.end(response);
     });
