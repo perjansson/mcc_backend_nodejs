@@ -11,6 +11,12 @@ app.listen(port);
 var db = null;
 
 function initDbHandler (req, http_res) {
+  connectToCouchDb();  
+  http_res.writeHead(200, {'Content-Type': 'text/plain'});
+  http_res.end('Node.js server up and running v-(*_*)z');
+}
+
+function connectToCouchDb() {
   if (db == null) {
     var cradle = require('cradle');
     var connection = new(cradle.Connection)('81.169.133.153', {
@@ -20,16 +26,12 @@ function initDbHandler (req, http_res) {
     db = connection.database('mcc');
 
     logMessage('Successfully connected to couchdb');
-    if (req != null && http_res != null) {
-      http_res.writeHead(200, {'Content-Type': 'text/plain'});
-      http_res.end('Node.js server up and running d-(*_*)z');
-    }
   }
 }
 
 io.sockets.on('connection', function (socket) {
   socket.on('meeting update request', function (data) {
-    initDbHandler();
+    connectToCouchDb();
 
     var meeting = JSON.parse(data);
     /*logMessage('Meeting ' + meeting.status + ':' + JSON.stringify(meeting, null, 4));*/
