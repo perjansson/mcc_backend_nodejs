@@ -30,6 +30,20 @@ function connectToCouchDb() {
 }
 
 io.sockets.on('connection', function (socket) {
+
+  socket.on('top list request', function() {
+    connectToCouchDb();
+
+    db.view('mcc/findallwithnameandmeetingcost', function (err, res) {
+      var meetings = [];
+      res.forEach(function (row) {
+        /*console.log("Meeting with name %s had cost %s %s", row.name, row.meetingCost, row.currency);*/
+        meetings.push(row);
+      });
+      socket.emit('top list update response', meetings);
+    });
+  });
+
   socket.on('meeting update request', function (data) {
     connectToCouchDb();
 
@@ -42,16 +56,14 @@ io.sockets.on('connection', function (socket) {
 
     db.save(meeting.id, meeting, function (err, res) {
       if (err) {
-          // Handle error
-          logMessage('Error saving meeting with id: ' + meeting.id + ' Error: ' + err);
+        // Handle error
+        logMessage('Error saving meeting with id: ' + meeting.id + ' Error: ' + err);
       } else {
-          // Handle success
-          logMessage('Success saving meeting with id: ' + meeting.id);
+        // Handle success
+        logMessage('Success saving meeting with id: ' + meeting.id);
       }
-      /*db.get(meeting.id, function (err, meeting) {
-          logMessage('Success getting meeting with id: ' + meeting.id);*/
-          socket.emit('meeting update response', meeting);
-      /*});*/
+
+      socket.emit('meeting update response', meeting);
     });
   });
 });
