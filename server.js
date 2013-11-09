@@ -6,6 +6,8 @@ var app = require('http').createServer(initDbHandler)
   , moment = require('moment')
   , uuid = require('node-uuid')
 
+io.set('log level', 1);
+
 app.listen(port);
 
 var db = null;
@@ -37,9 +39,9 @@ io.sockets.on('connection', function (socket) {
     db.view('mcc/findallwithnameandmeetingcost', function (err, res) {
       var meetings = [];
       res.forEach(function (row) {
-        /*console.log("Meeting with name %s had cost %s %s", row.name, row.meetingCost, row.currency);*/
         meetings.push(row);
       });
+      logMessage('Find all meetings with name and meeting cost');
       socket.emit('top list update response', meetings);
     });
   });
@@ -48,7 +50,6 @@ io.sockets.on('connection', function (socket) {
     connectToCouchDb();
 
     var meeting = JSON.parse(data);
-    /*logMessage('Meeting ' + meeting.status + ':' + JSON.stringify(meeting, null, 4));*/
     if (meeting.id == null || meeting.id == '') {
       meeting.id = uuid.v4();
       logMessage('Generated new id: ' + meeting.id);
