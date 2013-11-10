@@ -1,6 +1,7 @@
 var port = 1337;
 
-var app = require('http').createServer(initDbHandler)
+var http = require('http');
+var app = http.createServer(initDbHandler)
   , io = require('socket.io').listen(app)
   , fs = require('fs')
   , moment = require('moment')
@@ -38,11 +39,12 @@ io.sockets.on('connection', function (socket) {
 
     db.view('mcc/findallwithnameandmeetingcost', function (err, res) {
       var meetings = [];
-      res.forEach(function (row) {
-        meetings.push(row);
+      res.forEach(function (meeting) {
+        meetings.push(meeting);
       });
+      var updatedMeetings = updateWithComparisonCurrency(meetings);
       logMessage('Find all meetings with name and meeting cost');
-      socket.emit('top list update response', meetings);
+      socket.emit('top list update response', updatedMeetings);
     });
   });
 
@@ -68,6 +70,39 @@ io.sockets.on('connection', function (socket) {
     });
   });
 });
+
+function updateWithComparisonCurrency(meetings) {
+  var comparableCurrency = 'USD';
+  var updatedMeetings = [];
+
+  meetings.forEach(function (meeting) {
+    meeting.comparableCurrency = comparableCurrency;
+    var options = {
+      host: 'rate-exchange.appspot.com',
+      port: 80,
+      path: '/currency?from=' + meeting.currency + '&to='+ comparableCurrency
+    };
+
+    http.get(options, function(res) {
+      res.on("data", function(chunk) {
+        var currencyRate = JSON.parse(chunk);
+        if (currencyRate.rate) {
+          meeting.comparableMeetingCost = calculateComparableMeetingCost(meeting, currencyRate.rate);
+          console.log("Success getting currency rate and calculated comparable meeting cost: " + meeting.comparableMeetingCost + " (" + meeting.meetingCost + ")");
+          updatedMeetings.push(meeting);
+        }
+      });
+    }).on('error', function(e) {
+      console.log("Eror getting currency rate: " + e.message);
+    });
+
+  });
+  return updatedMeetings;
+}
+
+function calculateComparableMeetingCost(meeting, rate) {
+  return meeting.comparableMeetingCost = meeting.meetingCost * rate;
+}
 
 function logMessage(message) {
   console.log('### ' + moment().format('MMMM Do YYYY, h:mm:ss a')); 
