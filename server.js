@@ -1,5 +1,6 @@
 var port = 1337;
 
+var async = require('async');
 var http = require('http');
 var app = http.createServer(initDbHandler)
   , io = require('socket.io').listen(app)
@@ -42,9 +43,7 @@ io.sockets.on('connection', function (socket) {
       res.forEach(function (meeting) {
         meetings.push(meeting);
       });
-      var updatedMeetings = updateWithComparisonCurrency(meetings);
-      logMessage('Find all meetings with name and meeting cost');
-      socket.emit('top list update response', updatedMeetings);
+      updateWithComparisonCurrency(meetings, socket);
     });
   });
 
@@ -59,10 +58,8 @@ io.sockets.on('connection', function (socket) {
 
     db.save(meeting.id, meeting, function (err, res) {
       if (err) {
-        // Handle error
         logMessage('Error saving meeting with id: ' + meeting.id + ' Error: ' + err);
       } else {
-        // Handle success
         logMessage('Success saving meeting with id: ' + meeting.id);
       }
 
@@ -71,11 +68,12 @@ io.sockets.on('connection', function (socket) {
   });
 });
 
-function updateWithComparisonCurrency(meetings) {
+function updateWithComparisonCurrency(meetings, socket) {
   var comparableCurrency = 'USD';
   var updatedMeetings = [];
 
-  meetings.forEach(function (meeting) {
+  var counter = 1;
+  async.forEach(meetings, function (meeting, callback) { 
     meeting.comparableCurrency = comparableCurrency;
     var options = {
       host: 'rate-exchange.appspot.com',
@@ -91,17 +89,25 @@ function updateWithComparisonCurrency(meetings) {
           console.log("Success getting currency rate and calculated comparable meeting cost: " + meeting.comparableMeetingCost + " (" + meeting.meetingCost + ")");
           updatedMeetings.push(meeting);
         }
+        callback();
       });
     }).on('error', function(e) {
       console.log("Eror getting currency rate: " + e.message);
+      callback(); 
     });
 
+  }, function(err) {
+    logMessage('Find all meetings with name and meeting cost');
+    socket.emit('top list update response', updatedMeetings);
   });
-  return updatedMeetings;
 }
 
 function calculateComparableMeetingCost(meeting, rate) {
-  return meeting.comparableMeetingCost = meeting.meetingCost * rate;
+  return roundToZeroDecimals(meeting.comparableMeetingCost = meeting.meetingCost * rate);
+}
+
+function roundToZeroDecimals(value) {
+    return Math.round(value).toFixed(0);
 }
 
 function logMessage(message) {
