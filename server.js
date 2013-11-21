@@ -1,4 +1,5 @@
 var port = 1337;
+var dollarToBitCoinConversionRate = 0.001425;
 
 var async = require('async');
 var http = require('http');
@@ -69,13 +70,12 @@ io.sockets.on('connection', function (socket) {
 });
 
 function updateWithComparisonCurrency(meetings, socket) {
-  var comparableCurrency = 'USD';
+  var comparableCurrency = 'BTC';
   var updatedMeetings = [];
 
-  var counter = 1;
   async.forEach(meetings, function (meeting, callback) { 
     meeting.comparableCurrency = comparableCurrency;
-    var options = {
+    /*var options = {
       host: 'rate-exchange.appspot.com',
       port: 80,
       path: '/currency?from=' + meeting.currency + '&to='+ comparableCurrency
@@ -94,13 +94,94 @@ function updateWithComparisonCurrency(meetings, socket) {
     }).on('error', function(e) {
       console.log("Eror getting currency rate: " + e.message);
       callback(); 
-    });
+    });*/
+
+    var conversionRate = getConversionRate(meeting.currency)
+    if (conversionRate) {
+      meeting.comparableMeetingCost = meeting.meetingCost * conversionRate;
+      updatedMeetings.push(meeting);
+    }
+    callback();
 
   }, function(err) {
     logMessage('Find all meetings with name and meeting cost');
     socket.emit('top list update response', updatedMeetings);
   });
 }
+
+/****************/
+var conversionRates;
+var file = 'conversion_rates.json';
+fs.readFile(file, 'utf8', function (err, data) {
+  if (err) {
+    console.log('Error: ' + err);
+    return;
+  }
+ 
+  conversionRates = JSON.parse(data);
+  console.log("Loaded conversion rates, e.g. USD to BitCoin: " + getConversionRate("USD"));
+});
+
+var getConversionRate = function(fromKey) {
+  for (var i in conversionRates) {
+    var conversionRate = conversionRates[i];
+    if (conversionRate.fromKey == fromKey) {
+      return conversionRate.rate;
+    }
+  }
+}
+
+
+/*var file = 'currencies.json';
+var conversionRates = [];
+ 
+fs.readFile(file, 'utf8', function (err, data) {
+  if (err) {
+    console.log('Error: ' + err);
+    return;
+  }
+ 
+  currencies = JSON.parse(data);
+  for (var i in currencies) {
+    //for (var j in currencies) {
+      var from = currencies[i].key;
+      //var to = currencies[j].key;
+      var to = "USD";
+      retrieveConversionRateFromCloud(from, to, currencies.length);
+    //}
+  } 
+});*/
+var counter = 1;
+var retrieveConversionRateFromCloud = function(from, to, noofCurrencies) {
+
+  var options = {
+    host: 'rate-exchange.appspot.com',
+    port: 80,
+    path: '/currency?from=' + from + '&to='+ to
+  };
+
+  http.get(options, function(res) {
+    res.on("data", function(chunk) {
+      counter++;
+      var result = JSON.parse(chunk);
+      if (result.rate) {
+        var conversionRate = {};
+        conversionRate.fromKey = from;
+        conversionRate.toKey = "BTC";
+        conversionRate.rate = result.rate * dollarToBitCoinConversionRate;
+        conversionRates.push(conversionRate);
+        var lastOne = counter == noofCurrencies;
+        if (lastOne) {
+          console.log(JSON.stringify(conversionRates));
+        }
+      } else if (result.err) {
+        //console.log("Eror getting currency rate from: " + from + " to: " + to);
+      }
+    });
+  });
+}
+
+/****************/
 
 function calculateComparableMeetingCost(meeting, rate) {
   return roundToZeroDecimals(meeting.comparableMeetingCost = meeting.meetingCost * rate);
