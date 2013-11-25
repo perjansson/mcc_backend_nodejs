@@ -92,13 +92,13 @@ function updateWithComparisonCurrency(meetings, socket) {
         callback();
       });
     }).on('error', function(e) {
-      console.log("Eror getting currency rate: " + e.message);
+      console.log("Error getting currency rate: " + e.message);
       callback(); 
     });*/
 
     var conversionRate = getConversionRate(meeting.currency)
     if (conversionRate) {
-      meeting.comparableMeetingCost = meeting.meetingCost * conversionRate;
+      meeting.comparableMeetingCost = roundToDecimals(meeting.meetingCost * conversionRate, 5);
       updatedMeetings.push(meeting);
     }
     callback();
@@ -184,11 +184,12 @@ var retrieveConversionRateFromCloud = function(from, to, noofCurrencies) {
 /****************/
 
 function calculateComparableMeetingCost(meeting, rate) {
-  return roundToZeroDecimals(meeting.comparableMeetingCost = meeting.meetingCost * rate);
+  return roundToDecimals(meeting.comparableMeetingCost = meeting.meetingCost * rate, 0);
 }
 
-function roundToZeroDecimals(value) {
-    return Math.round(value).toFixed(0);
+function roundToDecimals(value, noofDecimals) {
+    var rounded = (Math.round(value * 100000) / 100000).toFixed(noofDecimals);
+    return rounded;
 }
 
 function logMessage(message) {
