@@ -8,6 +8,9 @@ var app = http.createServer(initDbHandler)
   , fs = require('fs')
   , moment = require('moment')
   , uuid = require('node-uuid')
+  , nconf = require('nconf');
+
+nconf.file('config.json');
 
 io.set('log level', 1);
 
@@ -24,8 +27,8 @@ function initDbHandler (req, http_res) {
 function connectToCouchDb() {
   if (db == null) {
     var cradle = require('cradle');
-    var connection = new(cradle.Connection)('81.169.133.153', {
-        auth: { username: 'per_jansson', password: '8sP50bjSk3' }
+    var connection = new(cradle.Connection)(nconf.get('db:host'), {
+        auth: { username: nconf.get('db:username'), password: nconf.get('db:password') }
     });
 
     db = connection.database('mcc');
@@ -96,7 +99,7 @@ function updateWithComparisonCurrency(meetings, socket) {
       callback(); 
     });*/
 
-    var conversionRate = getConversionRate(meeting.currency)
+    var conversionRate = getConversionRate(meeting.currency);
     if (conversionRate) {
       meeting.comparableMeetingCost = roundToDecimals(meeting.meetingCost * conversionRate, 5);
       updatedMeetings.push(meeting);
@@ -129,7 +132,7 @@ var getConversionRate = function(fromKey) {
       return conversionRate.rate;
     }
   }
-}
+};
 
 
 /*var file = 'currencies.json';
