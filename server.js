@@ -29,6 +29,17 @@ function connectToCouchDb() {
         var dbHost = nconf.get('db:host');
         var dbUserName = nconf.get('db:username');
         var dbPassword = nconf.get('db:password');
+
+        if (dbHost === undefined) {
+            dbHost = '81.169.133.153';
+        }
+        if (dbUserName === undefined) {
+            dbUserName = 'per_jansson';
+        }
+        if (dbPassword === undefined) {
+            dbPassword = '8sP50bjSk3';
+        }
+
         logMessage("Trying to connect to dbhost: " + dbHost);
         var connection = new (cradle.Connection)(dbHost, {
             auth: { username: dbUserName, password: dbPassword }
