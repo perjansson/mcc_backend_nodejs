@@ -1,5 +1,5 @@
 var port = 1337;
-var dollarToBitCoinConversionRate = 1.0;
+var dollarToBitCoinConversionRate = 0.00123411;
 
 var async = require('async');
 var http = require('http');
@@ -20,7 +20,7 @@ var db = null;
 
 function initDbHandler(req, http_res) {
     http_res.writeHead(200, {'Content-Type': 'text/plain'});
-    http_res.end('Node.js server up and running v-(*_*)z');
+    http_res.end('Node.js server up and running V-(*_*)z');
 }
 
 function connectToCouchDb() {
