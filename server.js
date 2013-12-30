@@ -1,5 +1,5 @@
 var port = 1337;
-var dollarToBitCoinConversionRate = 0.001425;
+var dollarToBitCoinConversionRate = 0.00123411;
 
 var async = require('async');
 var http = require('http');
