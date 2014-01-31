@@ -1,4 +1,4 @@
-require('newrelic');
+//require('newrelic');
 
 var port = 1337;
 var dollarToBitCoinConversionRate = 0.00123411;
