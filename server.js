@@ -1,7 +1,7 @@
 //require('newrelic');
 
 var port = 1337;
-var dollarToBitCoinConversionRate = 0.00123411;
+var dollarToBitCoinConversionRate = 0.0011849;
 
 var async = require('async');
 var http = require('http');
@@ -78,12 +78,14 @@ io.sockets.on('connection', function (socket) {
 
         db.save(meeting.id, meeting, function (err, res) {
             if (err) {
-                logMessage('Error saving meeting with id: ' + meeting.id + ' Error: ' + err);
+                var errorMessage = JSON.stringify(err);
+                logMessage('Error saving meeting with id: ' + meeting.id + ' Error: ' + errorMessage);
+                socket.emit('meeting update error', errorMessage);
             } else {
                 logMessage('Success saving meeting with id: ' + meeting.id);
+                socket.emit('meeting update response', meeting);
             }
 
-            socket.emit('meeting update response', meeting);
         });
     });
 });
