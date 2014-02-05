@@ -29,13 +29,14 @@ function connectToCouchDb() {
         var dbHost = nconf.get('db_host');
         var dbUserName = nconf.get('db_username');
         var dbPassword = nconf.get('db_password');
+        var dbName = nconf.get('db_name');
 
         logMessage("Trying to connect to database host: " + dbHost);
         var connection = new (cradle.Connection)(dbHost, {
             auth: { username: dbUserName, password: dbPassword }
         });
 
-        db = connection.database('mcc');
+        db = connection.database(dbName);
 
         logMessage('Successfully connected to couchdb');
     }
@@ -46,7 +47,7 @@ io.sockets.on('connection', function (socket) {
     socket.on('top list request', function () {
         connectToCouchDb();
 
-        db.view('mcc/findallwithnameandmeetingcost', function (err, res) {
+        db.view(nconf.get('db_view_top_list'), function (err, res) {
             var meetings = [];
             res.forEach(function (meeting) {
                 meetings.push(meeting);
@@ -79,11 +80,10 @@ io.sockets.on('connection', function (socket) {
 });
 
 function updateWithComparisonCurrency(meetings, socket) {
-    var comparableCurrency = 'BTC';
     var updatedMeetings = [];
 
     async.forEach(meetings, function (meeting, callback) {
-        meeting.comparableCurrency = comparableCurrency;
+        meeting.comparableCurrency = nconf.get('comparable_currency');
 
         var conversionRate = getConversionRate(meeting.currency);
         if (conversionRate) {
@@ -111,7 +111,7 @@ fs.readFile('conversion_rates.json', 'utf8', function (err, data) {
     }
 
     conversionRates = JSON.parse(data);
-    logMessage("Loaded conversion rates, e.g. SEK to BitCoin: " + getConversionRate("SEK"));
+    logMessage("Loaded conversion rates, e.g. SEK to BitCoin: " + getConversionRate('SEK'));
 });
 
 var getConversionRate = function (fromKey) {
