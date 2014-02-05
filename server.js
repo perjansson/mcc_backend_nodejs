@@ -1,24 +1,23 @@
-//require('newrelic');
-
 var port = 1337;
-var dollarToBitCoinConversionRate = 0.0011849;
 
+//require('newrelic');
 var async = require('async');
 var http = require('http');
-var app = http.createServer(initDbHandler)
-    , io = require('socket.io').listen(app)
-    , fs = require('fs')
-    , moment = require('moment')
-    , uuid = require('node-uuid')
-    , nconf = require('nconf');
+var app = http.createServer(initDbHandler);
+var io = require('socket.io').listen(app);
+var fs = require('fs');
+var moment = require('moment');
+var uuid = require('node-uuid');
+var cradle = require('cradle');
+var db = null;
 
-nconf.file('config.json');
+var nconf = require('nconf');
+nconf.argv().env().file({ file: 'config.json' });
 
 io.set('log level', 1);
-
 app.listen(port);
 
-var db = null;
+connectToCouchDb();
 
 function initDbHandler(req, http_res) {
     http_res.writeHead(200, {'Content-Type': 'text/plain'});
@@ -27,22 +26,11 @@ function initDbHandler(req, http_res) {
 
 function connectToCouchDb() {
     if (db == null) {
-        var cradle = require('cradle');
-        var dbHost = nconf.get('db:host');
-        var dbUserName = nconf.get('db:username');
-        var dbPassword = nconf.get('db:password');
+        var dbHost = nconf.get('db_host');
+        var dbUserName = nconf.get('db_username');
+        var dbPassword = nconf.get('db_password');
 
-        if (dbHost === undefined) {
-            dbHost = '81.169.133.153';
-        }
-        if (dbUserName === undefined) {
-            dbUserName = 'per_jansson';
-        }
-        if (dbPassword === undefined) {
-            dbPassword = '8sP50bjSk3';
-        }
-
-        logMessage("Trying to connect to dbhost: " + dbHost);
+        logMessage("Trying to connect to database host: " + dbHost);
         var connection = new (cradle.Connection)(dbHost, {
             auth: { username: dbUserName, password: dbPassword }
         });
@@ -96,26 +84,6 @@ function updateWithComparisonCurrency(meetings, socket) {
 
     async.forEach(meetings, function (meeting, callback) {
         meeting.comparableCurrency = comparableCurrency;
-        /*var options = {
-         host: 'rate-exchange.appspot.com',
-         port: 80,
-         path: '/currency?from=' + meeting.currency + '&to='+ comparableCurrency
-         };
-
-         http.get(options, function(res) {
-         res.on("data", function(chunk) {
-         var currencyRate = JSON.parse(chunk);
-         if (currencyRate.rate) {
-         meeting.comparableMeetingCost = calculateComparableMeetingCost(meeting, currencyRate.rate);
-         console.log("Success getting currency rate and calculated comparable meeting cost: " + meeting.comparableMeetingCost + " (" + meeting.meetingCost + ")");
-         updatedMeetings.push(meeting);
-         }
-         callback();
-         });
-         }).on('error', function(e) {
-         console.log("Error getting currency rate: " + e.message);
-         callback();
-         });*/
 
         var conversionRate = getConversionRate(meeting.currency);
         if (conversionRate) {
@@ -130,91 +98,33 @@ function updateWithComparisonCurrency(meetings, socket) {
     });
 }
 
-/****************/
-connectToCouchDb();
+function roundToDecimals(value, noofDecimals) {
+    return (Math.round(value * 100000) / 100000).toFixed(noofDecimals);
+}
 
-/****************/
+// Load conversion rates locally from conversion_rates.json
 var conversionRates;
-var file = 'conversion_rates.json';
-fs.readFile(file, 'utf8', function (err, data) {
+fs.readFile('conversion_rates.json', 'utf8', function (err, data) {
     if (err) {
         console.log('Error: ' + err);
         return;
     }
 
     conversionRates = JSON.parse(data);
-    logMessage("Loaded conversion rates, e.g. USD to BitCoin: " + getConversionRate("USD"));
+    logMessage("Loaded conversion rates, e.g. SEK to BitCoin: " + getConversionRate("SEK"));
 });
 
 var getConversionRate = function (fromKey) {
+    var conversionRateForFromKey = null;
     for (var i in conversionRates) {
         var conversionRate = conversionRates[i];
         if (conversionRate.fromKey == fromKey) {
-            return conversionRate.rate;
+            conversionRateForFromKey = conversionRate.rate;
+            break;
         }
     }
+    return conversionRateForFromKey;
 };
-
-
-/*var file = 'currencies.json';
- var conversionRates = [];
-
- fs.readFile(file, 'utf8', function (err, data) {
- if (err) {
- console.log('Error: ' + err);
- return;
- }
-
- currencies = JSON.parse(data);
- for (var i in currencies) {
- //for (var j in currencies) {
- var from = currencies[i].key;
- //var to = currencies[j].key;
- var to = "USD";
- retrieveConversionRateFromCloud(from, to, currencies.length);
- //}
- }
- });*/
-var counter = 1;
-var retrieveConversionRateFromCloud = function (from, to, noofCurrencies) {
-
-    var options = {
-        host: 'rate-exchange.appspot.com',
-        port: 80,
-        path: '/currency?from=' + from + '&to=' + to
-    };
-
-    http.get(options, function (res) {
-        res.on("data", function (chunk) {
-            counter++;
-            var result = JSON.parse(chunk);
-            if (result.rate) {
-                var conversionRate = {};
-                conversionRate.fromKey = from;
-                conversionRate.toKey = "BTC";
-                conversionRate.rate = result.rate * dollarToBitCoinConversionRate;
-                conversionRates.push(conversionRate);
-                var lastOne = counter == noofCurrencies;
-                if (lastOne) {
-                    console.log(JSON.stringify(conversionRates));
-                }
-            } else if (result.err) {
-                //console.log("Eror getting currency rate from: " + from + " to: " + to);
-            }
-        });
-    });
-}
-
-/****************/
-
-function calculateComparableMeetingCost(meeting, rate) {
-    return roundToDecimals(meeting.comparableMeetingCost = meeting.meetingCost * rate, 0);
-}
-
-function roundToDecimals(value, noofDecimals) {
-    var rounded = (Math.round(value * 100000) / 100000).toFixed(noofDecimals);
-    return rounded;
-}
 
 function logMessage(message) {
     console.log('### ' + moment().format('MMMM Do YYYY, h:mm:ss a') + " " + message);
