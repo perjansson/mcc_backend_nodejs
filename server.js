@@ -9,10 +9,13 @@ var fs = require('fs');
 var moment = require('moment');
 var uuid = require('node-uuid');
 var cradle = require('cradle');
+var logger = require('./local_node_modules/logger.js');
 var db = null;
 
 var nconf = require('nconf');
 nconf.argv().env().file({ file: 'config.json' });
+
+nconf.file('config.json');
 
 io.set('log level', 1);
 app.listen(port);
@@ -31,14 +34,14 @@ function connectToCouchDb() {
         var dbPassword = nconf.get('db_password');
         var dbName = nconf.get('db_name');
 
-        logMessage("Trying to connect to database host: " + dbHost);
+        logger.log("Trying to connect to database host: " + dbHost);
         var connection = new (cradle.Connection)(dbHost, {
             auth: { username: dbUserName, password: dbPassword }
         });
 
         db = connection.database(dbName);
 
-        logMessage('Successfully connected to couchdb');
+        logger.log('### ' + moment().format('MMMM Do YYYY, h:mm:ss a') + " " + 'Successfully connected to couchdb');
     }
 }
 
@@ -62,16 +65,16 @@ io.sockets.on('connection', function (socket) {
         var meeting = JSON.parse(data);
         if (meeting.id == null || meeting.id == '') {
             meeting.id = uuid.v4();
-            logMessage('Generated new id: ' + meeting.id);
+            logger.log('### ' + moment().format('MMMM Do YYYY, h:mm:ss a') + " " + 'Generated new id: ' + meeting.id);
         }
 
         db.save(meeting.id, meeting, function (err, res) {
             if (err) {
                 var errorMessage = JSON.stringify(err);
-                logMessage('Error saving meeting with id: ' + meeting.id + ' Error: ' + errorMessage);
+                logger.log('### ' + moment().format('MMMM Do YYYY, h:mm:ss a') + " " + 'Error saving meeting with id: ' + meeting.id + ' Error: ' + errorMessage);
                 socket.emit('meeting update error', errorMessage);
             } else {
-                logMessage('Success saving meeting with id: ' + meeting.id);
+                logger.log('### ' + moment().format('MMMM Do YYYY, h:mm:ss a') + " " + 'Success saving meeting with id: ' + meeting.id);
                 socket.emit('meeting update response', meeting);
             }
 
@@ -93,7 +96,7 @@ function updateWithComparisonCurrency(meetings, socket) {
         callback();
 
     }, function (err) {
-        logMessage('Find all meetings with name and meeting cost');
+        logger.log('### ' + moment().format('MMMM Do YYYY, h:mm:ss a') + " " + 'Find all meetings with name and meeting cost');
         socket.emit('top list update response', updatedMeetings);
     });
 }
@@ -111,7 +114,7 @@ fs.readFile('conversion_rates.json', 'utf8', function (err, data) {
     }
 
     conversionRates = JSON.parse(data);
-    logMessage("Loaded conversion rates, e.g. SEK to BitCoin: " + getConversionRate('SEK'));
+    logger.log('### ' + moment().format('MMMM Do YYYY, h:mm:ss a') + " " + "Loaded conversion rates, e.g. SEK to BitCoin: " + getConversionRate('SEK'));
 });
 
 var getConversionRate = function (fromKey) {
@@ -125,7 +128,3 @@ var getConversionRate = function (fromKey) {
     }
     return conversionRateForFromKey;
 };
-
-function logMessage(message) {
-    console.log('### ' + moment().format('MMMM Do YYYY, h:mm:ss a') + " " + message);
-}
