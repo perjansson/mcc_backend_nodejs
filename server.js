@@ -8,8 +8,9 @@ var io = require('socket.io').listen(app);
 var uuid = require('node-uuid');
 var cradle = require('cradle');
 var nconf = require('nconf');
-var logger = require('./local_node_modules/logger.js');
-var currencyConversion = require('./local_node_modules/currencyconversion.js');
+var logger = require('./libs/logger.js');
+var currencyConversion = require('./libs/currencyconversion.js');
+var numberutil = require('./libs/numberutil.js');
 var db = null;
 
 nconf.argv().env().file({ file: 'config.json' });
@@ -89,7 +90,8 @@ function updateWithComparisonCurrency(meetings, socket) {
 
         var conversionRate = currencyConversion.getConversionRate(meeting.currency);
         if (conversionRate) {
-            meeting.comparableMeetingCost = roundToDecimals(meeting.meetingCost * conversionRate, 5);
+            var meetingCostInComparisionCurrency = meeting.meetingCost * conversionRate;
+            meeting.comparableMeetingCost = numberutil.roundToDecimals(meetingCostInComparisionCurrency, 5);
             updatedMeetings.push(meeting);
         }
         callback();
@@ -98,8 +100,4 @@ function updateWithComparisonCurrency(meetings, socket) {
         logger.log('Find all meetings with name and meeting cost');
         socket.emit('top list update response', updatedMeetings);
     });
-}
-
-function roundToDecimals(value, noofDecimals) {
-    return (Math.round(value * 100000) / 100000).toFixed(noofDecimals);
 }
