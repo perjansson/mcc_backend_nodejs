@@ -5,13 +5,13 @@ var async = require('async');
 var http = require('http');
 var app = http.createServer(initDbHandler);
 var io = require('socket.io').listen(app);
-var fs = require('fs');
 var uuid = require('node-uuid');
 var cradle = require('cradle');
+var nconf = require('nconf');
 var logger = require('./local_node_modules/logger.js');
+var currencyConversion = require('./local_node_modules/currencyconversion.js');
 var db = null;
 
-var nconf = require('nconf');
 nconf.argv().env().file({ file: 'config.json' });
 
 nconf.file('config.json');
@@ -87,7 +87,7 @@ function updateWithComparisonCurrency(meetings, socket) {
     async.forEach(meetings, function (meeting, callback) {
         meeting.comparableCurrency = nconf.get('comparable_currency');
 
-        var conversionRate = getConversionRate(meeting.currency);
+        var conversionRate = currencyConversion.getConversionRate(meeting.currency);
         if (conversionRate) {
             meeting.comparableMeetingCost = roundToDecimals(meeting.meetingCost * conversionRate, 5);
             updatedMeetings.push(meeting);
@@ -103,27 +103,3 @@ function updateWithComparisonCurrency(meetings, socket) {
 function roundToDecimals(value, noofDecimals) {
     return (Math.round(value * 100000) / 100000).toFixed(noofDecimals);
 }
-
-// Load conversion rates locally from conversion_rates.json
-var conversionRates;
-fs.readFile('conversion_rates.json', 'utf8', function (err, data) {
-    if (err) {
-        console.log('Error: ' + err);
-        return;
-    }
-
-    conversionRates = JSON.parse(data);
-    logger.log("Loaded conversion rates (e.g. SEK to BitCoin: " + getConversionRate('SEK') + ")");
-});
-
-var getConversionRate = function (fromKey) {
-    var conversionRateForFromKey = null;
-    for (var i in conversionRates) {
-        var conversionRate = conversionRates[i];
-        if (conversionRate.fromKey == fromKey) {
-            conversionRateForFromKey = conversionRate.rate;
-            break;
-        }
-    }
-    return conversionRateForFromKey;
-};
