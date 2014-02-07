@@ -6,7 +6,6 @@ var http = require('http');
 var app = http.createServer(initDbHandler);
 var io = require('socket.io').listen(app);
 var fs = require('fs');
-var moment = require('moment');
 var uuid = require('node-uuid');
 var cradle = require('cradle');
 var logger = require('./local_node_modules/logger.js');
@@ -41,7 +40,7 @@ function connectToCouchDb() {
 
         db = connection.database(dbName);
 
-        logger.log('### ' + moment().format('MMMM Do YYYY, h:mm:ss a') + " " + 'Successfully connected to couchdb');
+        logger.log('Successfully connected to couchdb');
     }
 }
 
@@ -65,16 +64,16 @@ io.sockets.on('connection', function (socket) {
         var meeting = JSON.parse(data);
         if (meeting.id == null || meeting.id == '') {
             meeting.id = uuid.v4();
-            logger.log('### ' + moment().format('MMMM Do YYYY, h:mm:ss a') + " " + 'Generated new id: ' + meeting.id);
+            logger.log('Generated new id: ' + meeting.id);
         }
 
         db.save(meeting.id, meeting, function (err, res) {
             if (err) {
                 var errorMessage = JSON.stringify(err);
-                logger.log('### ' + moment().format('MMMM Do YYYY, h:mm:ss a') + " " + 'Error saving meeting with id: ' + meeting.id + ' Error: ' + errorMessage);
+                logger.log('Error saving meeting with id: ' + meeting.id + ' Error: ' + errorMessage);
                 socket.emit('meeting update error', errorMessage);
             } else {
-                logger.log('### ' + moment().format('MMMM Do YYYY, h:mm:ss a') + " " + 'Success saving meeting with id: ' + meeting.id);
+                logger.log('Success saving meeting with id: ' + meeting.id);
                 socket.emit('meeting update response', meeting);
             }
 
@@ -96,7 +95,7 @@ function updateWithComparisonCurrency(meetings, socket) {
         callback();
 
     }, function (err) {
-        logger.log('### ' + moment().format('MMMM Do YYYY, h:mm:ss a') + " " + 'Find all meetings with name and meeting cost');
+        logger.log('Find all meetings with name and meeting cost');
         socket.emit('top list update response', updatedMeetings);
     });
 }
@@ -114,7 +113,7 @@ fs.readFile('conversion_rates.json', 'utf8', function (err, data) {
     }
 
     conversionRates = JSON.parse(data);
-    logger.log('### ' + moment().format('MMMM Do YYYY, h:mm:ss a') + " " + "Loaded conversion rates, e.g. SEK to BitCoin: " + getConversionRate('SEK'));
+    logger.log("Loaded conversion rates (e.g. SEK to BitCoin: " + getConversionRate('SEK') + ")");
 });
 
 var getConversionRate = function (fromKey) {
