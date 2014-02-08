@@ -55,7 +55,7 @@ io.sockets.on('connection', function (socket) {
             res.forEach(function (meeting) {
                 meetings.push(meeting);
             });
-            updateWithComparisonCurrency(meetings, socket);
+            updateMeetingWithStuff(meetings, socket);
         });
     });
 
@@ -82,7 +82,7 @@ io.sockets.on('connection', function (socket) {
     });
 });
 
-function updateWithComparisonCurrency(meetings, socket) {
+function updateMeetingWithStuff(meetings, socket) {
     var updatedMeetings = [];
 
     async.forEach(meetings, function (meeting, callback) {
@@ -94,10 +94,36 @@ function updateWithComparisonCurrency(meetings, socket) {
             meeting.comparableMeetingCost = numberutil.roundToDecimals(meetingCostInComparisionCurrency, 5);
             updatedMeetings.push(meeting);
         }
+
+        meeting.duration = meeting.meetingCost / meeting.numberOfAttendees / meeting.averageHourlyRate * 3600;
+        meeting.prettyDuration = getPrettyMeetingDuration(meeting);
+
         callback();
 
     }, function (err) {
         logger.log('Find all meetings with name and meeting cost');
         socket.emit('top list update response', updatedMeetings);
     });
+}
+
+function getPrettyMeetingDuration(meeting) {
+    var prettyMeetingTime = null;
+    var timeInHours = meeting.meetingCost / meeting.numberOfAttendees / meeting.averageHourlyRate;
+    if (timeInHours >= 1) {
+        var array = roundToDecimals(timeInHours, 2).toString().split('.');
+        var hours = parseInt(array[0]);
+        var minutes = parseInt(array[1]);
+        prettyMeetingTime = hours + " h " + minutes + " min";
+    } else if (timeInHours >= 0.01666666666667) {
+        var minutes = timeInHours * 60;
+        prettyMeetingTime = roundToDecimals(minutes, 0) + " min";
+    } else {
+        var seconds = timeInHours * 3600;
+        prettyMeetingTime = roundToDecimals(seconds, 0) + " s";
+    }
+    return  prettyMeetingTime;
+}
+
+function roundToDecimals(value, numberOfDecimals) {
+    return (Math.round(value * 100000) / 100000).toFixed(numberOfDecimals);
 }
