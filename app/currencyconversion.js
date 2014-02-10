@@ -15,7 +15,7 @@ var getConversionRate = function (fromKey) {
 
 // Load conversion rates locally from conversion_rates.json
 var conversionRates;
-fs.readFile('conversion_rates.json', 'utf8', function (err, data) {
+fs.readFile('./config/conversion_rates.json', 'utf8', function (err, data) {
     if (err) {
         console.log('Error: ' + err);
         return;
