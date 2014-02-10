@@ -18,12 +18,44 @@ nconf.file('./config/config.json');
 io.set('log level', 1);
 app.listen(port);
 
-connectToCouchDb();
-
 function initDbHandler(req, http_res) {
     http_res.writeHead(200, {'Content-Type': 'text/plain'});
     http_res.end('Node.js server up and running V-(*_*)z');
 }
+
+io.sockets.on('connection', function (socket) {
+    connectToCouchDb();
+
+    socket.on('meeting update request', function (data) {
+        var meeting = JSON.parse(data);
+        if (meeting.id == null || meeting.id == '') {
+            meeting.id = uuid.v4();
+            logger.log('Generated new id: ' + meeting.id);
+        }
+
+        db.save(meeting.id, meeting, function (err, res) {
+            if (err) {
+                var errorMessage = JSON.stringify(err);
+                logger.log('Error saving meeting with id: ' + meeting.id + ' Error: ' + errorMessage);
+                socket.emit('meeting error', errorMessage);
+            } else {
+                logger.log('Success saving meeting with id: ' + meeting.id);
+                socket.emit('meeting response', meeting);
+            }
+
+        });
+    });
+
+    socket.on('top list request', function () {
+        db.view(nconf.get('db_view_top_list'), function (err, res) {
+            var meetings = [];
+            res.forEach(function (meeting) {
+                meetings.push(meeting);
+            });
+            updateMeetingWithStuff(meetings, socket);
+        });
+    });
+});
 
 function connectToCouchDb() {
     if (db == null) {
@@ -42,43 +74,6 @@ function connectToCouchDb() {
         logger.log('Successfully connected to couchdb');
     }
 }
-
-io.sockets.on('connection', function (socket) {
-
-    socket.on('top list request', function () {
-        connectToCouchDb();
-
-        db.view(nconf.get('db_view_top_list'), function (err, res) {
-            var meetings = [];
-            res.forEach(function (meeting) {
-                meetings.push(meeting);
-            });
-            updateMeetingWithStuff(meetings, socket);
-        });
-    });
-
-    socket.on('meeting update request', function (data) {
-        connectToCouchDb();
-
-        var meeting = JSON.parse(data);
-        if (meeting.id == null || meeting.id == '') {
-            meeting.id = uuid.v4();
-            logger.log('Generated new id: ' + meeting.id);
-        }
-
-        db.save(meeting.id, meeting, function (err, res) {
-            if (err) {
-                var errorMessage = JSON.stringify(err);
-                logger.log('Error saving meeting with id: ' + meeting.id + ' Error: ' + errorMessage);
-                socket.emit('meeting update error', errorMessage);
-            } else {
-                logger.log('Success saving meeting with id: ' + meeting.id);
-                socket.emit('meeting update response', meeting);
-            }
-
-        });
-    });
-});
 
 function updateMeetingWithStuff(meetings, socket) {
     var updatedMeetings = [];
@@ -100,23 +95,24 @@ function updateMeetingWithStuff(meetings, socket) {
 
     }, function (err) {
         logger.log('Find all meetings with name and meeting cost');
-        socket.emit('top list update response', updatedMeetings);
+        socket.emit('top list response', updatedMeetings);
     });
 }
 
 function getPrettyMeetingDuration(meeting) {
     var prettyMeetingTime = null;
     var timeInHours = meeting.meetingCost / meeting.numberOfAttendees / meeting.averageHourlyRate;
+    var hours, minutes, seconds = null;
     if (timeInHours >= 1) {
         var array = numberutil.roundToDecimals(timeInHours, 2).toString().split('.');
-        var hours = parseInt(array[0]);
-        var minutes = parseInt(array[1]);
+        hours = parseInt(array[0]);
+        minutes = parseInt(array[1]);
         prettyMeetingTime = hours + " h " + minutes + " min";
     } else if (timeInHours >= 0.01666666666667) {
-        var minutes = timeInHours * 60;
+        minutes = timeInHours * 60;
         prettyMeetingTime = numberutil.roundToDecimals(minutes, 0) + " min";
     } else {
-        var seconds = timeInHours * 3600;
+        seconds = timeInHours * 3600;
         prettyMeetingTime = numberutil.roundToDecimals(seconds, 0) + " s";
     }
     return  prettyMeetingTime;
