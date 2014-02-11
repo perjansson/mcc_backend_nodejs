@@ -31,8 +31,8 @@ module.exports = function (app) {
                     logger.log('Error saving meeting with id: ' + meeting.id + ' Error: ' + errorMessage);
                     socket.emit('meeting error', errorMessage);
                 } else {
-                    logger.log('Success saving meeting with id: ' + meeting.id);
-                    socket.emit('meeting server response', meeting);
+                    logger.log('meeting update response for meeting with id: ' + meeting.id);
+                    socket.emit('meeting update response', meeting);
                 }
 
             });
@@ -86,8 +86,8 @@ module.exports = function (app) {
             callback();
 
         }, function (err) {
-            logger.log('Find all meetings with name and meeting cost');
-            socket.emit('top list server response', updatedMeetings);
+            logger.log('top list update response');
+            socket.emit('top list update response', updatedMeetings);
         });
     }
 
