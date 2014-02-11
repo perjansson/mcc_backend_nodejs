@@ -5,7 +5,6 @@ var meetingStuffUpdater = require('./meetingstuffupdater.js');
 var db = meetingRepository.connect();
 
 module.exports = function (app) {
-
     var io = socketio.listen(app);
     io.set('log level', 1);
 
