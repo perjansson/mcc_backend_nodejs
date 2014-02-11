@@ -1,15 +1,15 @@
 var socketio = require('socket.io');
+var nconf = require('nconf');
 var cradle = require('cradle');
 var async = require('async');
-var nconf = require('nconf');
-var uuid = require('node-uuid');
 var meetingRepository = require('./meetingrepository.js');
 var currencyConversion = require('./currencyconversion.js');
 var numberutil = require('./numberutil.js');
 var logger = require('./logger.js');
 
-var db = null;
 nconf.file('./config/config.json');
+
+var db = meetingRepository.connect();
 
 module.exports = function (app) {
 
@@ -17,36 +17,26 @@ module.exports = function (app) {
     io.set('log level', 1);
 
     io.sockets.on('connection', function (socket) {
-        db = meetingRepository.connect();
-
         socket.on('meeting update request', function (data) {
             var meeting = JSON.parse(data);
-            if (meeting.id == null || meeting.id == '') {
-                meeting.id = uuid.v4();
-                logger.log('Generated new id: ' + meeting.id);
-            }
-
-            db.save(meeting.id, meeting, function (err, res) {
-                if (err) {
-                    var errorMessage = JSON.stringify(err);
-                    logger.log('Error saving meeting with id: ' + meeting.id + ' Error: ' + errorMessage);
-                    socket.emit('meeting error', errorMessage);
-                } else {
-                    logger.log('meeting update response for meeting with id: ' + meeting.id);
-                    socket.emit('meeting update response', meeting);
-                }
-
+            meetingRepository.saveMeeting(meeting, function (meeting) {
+                socket.emit('meeting update response', meeting);
+            }, function (errorMessage) {
+                socket.emit('meeting error', errorMessage);
             });
         });
 
         socket.on('top list request', function () {
-            meetingRepository.getTopList(function(meetings) {
-                updateMeetingWithStuff(meetings, socket);
+            meetingRepository.getTopList(function (meetings) {
+                updateMeetingWithStuff(meetings, function (updatedMeetings) {
+                    socket.emit('top list update response', updatedMeetings);
+                });
             });
         });
+
     });
 
-    function updateMeetingWithStuff(meetings, socket) {
+    function updateMeetingWithStuff(meetings, callback) {
         var updatedMeetings = [];
 
         async.forEach(meetings, function (meeting, callback) {
@@ -66,7 +56,7 @@ module.exports = function (app) {
 
         }, function (err) {
             logger.log('top list update response');
-            socket.emit('top list update response', updatedMeetings);
+            callback(updatedMeetings);
         });
     }
 
@@ -86,7 +76,7 @@ module.exports = function (app) {
             seconds = timeInHours * 3600;
             prettyMeetingTime = numberutil.roundToDecimals(seconds, 0) + " s";
         }
-        return  prettyMeetingTime;
+        return prettyMeetingTime;
     }
 
 }
