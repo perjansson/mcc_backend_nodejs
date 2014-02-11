@@ -1,8 +1,9 @@
-var nconf = require('nconf');
-var cradle = require('cradle');
-var uuid = require('node-uuid');
 var socketio = require('socket.io');
+var cradle = require('cradle');
 var async = require('async');
+var nconf = require('nconf');
+var uuid = require('node-uuid');
+var meetingRepository = require('./meetingrepository.js');
 var currencyConversion = require('./currencyconversion.js');
 var numberutil = require('./numberutil.js');
 var logger = require('./logger.js');
@@ -16,7 +17,7 @@ module.exports = function (app) {
     io.set('log level', 1);
 
     io.sockets.on('connection', function (socket) {
-        connectToCouchDb();
+        db = meetingRepository.connect();
 
         socket.on('meeting update request', function (data) {
             var meeting = JSON.parse(data);
@@ -39,33 +40,11 @@ module.exports = function (app) {
         });
 
         socket.on('top list request', function () {
-            db.view(nconf.get('db_view_top_list'), function (err, res) {
-                var meetings = [];
-                res.forEach(function (meeting) {
-                    meetings.push(meeting);
-                });
+            meetingRepository.getTopList(function(meetings) {
                 updateMeetingWithStuff(meetings, socket);
             });
         });
     });
-
-    function connectToCouchDb() {
-        if (db == null) {
-            var dbHost = nconf.get('db_host');
-            var dbUserName = nconf.get('db_username');
-            var dbPassword = nconf.get('db_password');
-            var dbName = nconf.get('db_name');
-
-            logger.log("Trying to connect to database host: " + dbHost);
-            var connection = new (cradle.Connection)(dbHost, {
-                auth: { username: dbUserName, password: dbPassword }
-            });
-
-            db = connection.database(dbName);
-
-            logger.log('Successfully connected to couchdb');
-        }
-    }
 
     function updateMeetingWithStuff(meetings, socket) {
         var updatedMeetings = [];
