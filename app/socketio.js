@@ -13,17 +13,22 @@ module.exports = function (app) {
             var meeting = JSON.parse(data);
             meetingRepository.saveMeeting(meeting, function (meeting) {
                 socket.emit('meeting update response', meeting);
+                updateSocketClientsWithLatestTopList();
             }, function (errorMessage) {
                 socket.emit('meeting error', errorMessage);
             });
         });
 
         socket.on('top list request', function () {
+            updateSocketClientsWithLatestTopList();
+        });
+
+        function updateSocketClientsWithLatestTopList() {
             meetingRepository.getTopList(function (meetings) {
                 meetingStuffUpdater.updateMeetingWithStuff(meetings, function (updatedMeetings) {
                     socket.emit('top list update response', updatedMeetings);
                 });
             });
-        });
+        }
     });
 }
