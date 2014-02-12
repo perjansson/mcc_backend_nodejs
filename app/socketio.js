@@ -26,7 +26,7 @@ module.exports = function (app) {
         function updateSocketClientsWithLatestTopList() {
             meetingRepository.getTopList(function (meetings) {
                 meetingStuffUpdater.updateMeetingWithStuff(meetings, function (updatedMeetings) {
-                    socket.emit('top list update response', updatedMeetings);
+                    io.sockets.emit('top list update response', updatedMeetings);
                 });
             });
         }
