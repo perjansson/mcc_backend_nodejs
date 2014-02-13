@@ -2,7 +2,7 @@ var fs = require('fs');
 var logger = require('./logger.js');
 
 var getConversionRate = function (fromKey) {
-    var conversionRateForFromKey = null;
+    var conversionRateForFromKey = 1;
     for (var i in conversionRates) {
         var conversionRate = conversionRates[i];
         if (conversionRate.fromKey == fromKey) {

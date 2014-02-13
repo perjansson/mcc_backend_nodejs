@@ -16,11 +16,11 @@ exports.updateMeetingWithStuff = function (meetings, callback) {
         if (conversionRate) {
             var meetingCostInComparisionCurrency = meeting.meetingCost * conversionRate;
             meeting.comparableMeetingCost = numberutil.roundToDecimals(meetingCostInComparisionCurrency, 5);
-            updatedMeetings.push(meeting);
         }
 
         meeting.duration = meeting.meetingCost / meeting.numberOfAttendees / meeting.averageHourlyRate * 3600;
         meeting.prettyDuration = getPrettyMeetingDuration(meeting);
+        updatedMeetings.push(meeting);
 
         callback();
 
