@@ -23,7 +23,7 @@ exports.connect = function () {
     logger.log('Successfully connected to couchdb');
 
     return db;
-}
+};
 
 exports.saveMeeting = function (meeting, successCallback, failureCallback) {
     if (meeting.id == null || meeting.id == '') {
@@ -40,9 +40,21 @@ exports.saveMeeting = function (meeting, successCallback, failureCallback) {
             logger.log('meeting update response for meeting with id: ' + meeting.id);
             successCallback(meeting);
         }
-
     });
-}
+};
+
+exports.getMeetingById = function (meetingId, successCallback, failureCallback) {
+    db.get(meetingId, function (err, meeting) {
+        if (err) {
+            var errorMessage = JSON.stringify(err);
+            logger.log('Error getting meeting with id: ' + meetingId + ' Error: ' + errorMessage);
+            failureCallback(errorMessage);
+        } else {
+            logger.log('meeting status response for meeting with id: ' + meeting.id);
+            successCallback(meeting);
+        }
+    });
+};
 
 exports.getTopList = function (successCallback) {
     db.view(nconf.get('db_view_top_list'), function (err, res) {
@@ -52,4 +64,4 @@ exports.getTopList = function (successCallback) {
         });
         successCallback(meetings);
     });
-}
+};

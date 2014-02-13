@@ -9,11 +9,22 @@ module.exports = function (app) {
     io.set('log level', 1);
 
     io.sockets.on('connection', function (socket) {
-        socket.on('meeting update request', function (data) {
-            var meeting = JSON.parse(data);
+        socket.on('meeting update request', function (meetingAsString) {
+            var meeting = JSON.parse(meetingAsString);
             meetingRepository.saveMeeting(meeting, function (meeting) {
                 socket.emit('meeting update response', meeting);
                 updateSocketClientsWithLatestTopList();
+            }, function (errorMessage) {
+                socket.emit('meeting error', errorMessage);
+            });
+        });
+
+        socket.on('meeting status request', function (meetingId) {
+            meetingRepository.getMeetingById(meetingId, function (meeting) {
+                var meetings = [meeting];
+                meetingStuffUpdater.updateMeetingWithStuff(meetings, function (updatedMeetings) {
+                    socket.emit('meeting status response', updatedMeetings[0]);
+                });
             }, function (errorMessage) {
                 socket.emit('meeting error', errorMessage);
             });

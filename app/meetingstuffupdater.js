@@ -25,26 +25,25 @@ exports.updateMeetingWithStuff = function (meetings, callback) {
         callback();
 
     }, function (err) {
-        logger.log('top list update response');
         callback(updatedMeetings);
     });
 }
 
 function getPrettyMeetingDuration(meeting) {
-    var prettyMeetingTime = null;
+    var prettyMeetingDuration = null;
     var timeInHours = meeting.meetingCost / meeting.numberOfAttendees / meeting.averageHourlyRate;
     var hours, minutes, seconds = null;
     if (timeInHours >= 1) {
         var array = numberutil.roundToDecimals(timeInHours, 2).toString().split('.');
         hours = parseInt(array[0]);
         minutes = parseInt(array[1]);
-        prettyMeetingTime = hours + " h " + minutes + " min";
+        prettyMeetingDuration = hours + " h " + minutes + " min";
     } else if (timeInHours >= 0.01666666666667) {
         minutes = timeInHours * 60;
-        prettyMeetingTime = numberutil.roundToDecimals(minutes, 0) + " min";
+        prettyMeetingDuration = numberutil.roundToDecimals(minutes, 0) + " min";
     } else {
         seconds = timeInHours * 3600;
-        prettyMeetingTime = numberutil.roundToDecimals(seconds, 0) + " s";
+        prettyMeetingDuration = numberutil.roundToDecimals(seconds, 0) + " s";
     }
-    return prettyMeetingTime;
+    return prettyMeetingDuration;
 }
