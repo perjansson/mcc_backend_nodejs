@@ -37,7 +37,7 @@ exports.saveMeeting = function (meeting, successCallback, failureCallback) {
             logger.log('Error saving meeting with id: ' + meeting.id + ' Error: ' + errorMessage);
             failureCallback(errorMessage);
         } else {
-            logger.log('meeting update response for meeting with id: ' + meeting.id);
+            logger.log('Meeting update response for meeting with id: ' + meeting.id);
             successCallback(meeting);
         }
     });
@@ -50,8 +50,25 @@ exports.getMeetingById = function (meetingId, successCallback, failureCallback) 
             logger.log('Error getting meeting with id: ' + meetingId + ' Error: ' + errorMessage);
             failureCallback(errorMessage);
         } else {
-            logger.log('meeting status response for meeting with id: ' + meeting.id);
+            logger.log('Meeting status response for meeting with id: ' + meeting.id);
             successCallback(meeting);
+        }
+    });
+};
+
+exports.deleteMeetingById = function (meetingId, successCallback, failureCallback) {
+    db.get(meetingId, function (err, meeting) {
+        if (meeting != null) {
+            db.remove(meeting.id, meeting._rev, function (err, meeting) {
+                if (err) {
+                    var errorMessage = JSON.stringify(err);
+                    logger.log('Error deleting meeting with id: ' + meetingId + ' Error: ' + errorMessage);
+                    failureCallback(errorMessage);
+                } else {
+                    logger.log('Meeting delete response for meeting with id: ' + meeting.id);
+                    successCallback(meeting);
+                }
+            });
         }
     });
 };

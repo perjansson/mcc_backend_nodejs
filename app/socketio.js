@@ -26,7 +26,16 @@ module.exports = function (app) {
                     socket.emit('meeting status response', updatedMeetings[0]);
                 });
             }, function (errorMessage) {
-                socket.emit('meeting error', errorMessage);
+                socket.emit('meeting status error', errorMessage);
+            });
+        });
+
+        socket.on('meeting delete request', function (meetingId) {
+            meetingRepository.deleteMeetingById(meetingId, function (meeting) {
+                socket.emit('meeting delete response', meeting);
+                updateSocketClientsWithLatestTopList();
+            }, function (errorMessage) {
+                socket.emit('meeting delete error', errorMessage);
             });
         });
 
