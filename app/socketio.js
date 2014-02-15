@@ -9,10 +9,13 @@ module.exports = function (app) {
     io.set('log level', 1);
 
     io.sockets.on('connection', function (socket) {
+
         socket.on('meeting update request', function (meetingAsString) {
             var meeting = JSON.parse(meetingAsString);
-            meetingRepository.saveMeeting(meeting, function (meeting) {
-                socket.emit('meeting update response', meeting);
+            meetingRepository.saveMeeting(meeting, function (meeting) {var meetings = [meeting];
+                meetingStuffUpdater.updateMeetingWithStuff(meetings, function (updatedMeetings) {
+                    io.sockets.emit('meeting update response', updatedMeetings[0]);
+                });
                 updateSocketClientsWithLatestTopList();
             }, function (errorMessage) {
                 socket.emit('meeting error', errorMessage);
