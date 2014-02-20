@@ -14,8 +14,8 @@ exports.updateMeetingWithStuff = function (meetings, callback) {
 
         var conversionRate = currencyConversion.getConversionRate(meeting.currency);
         if (conversionRate) {
-            var meetingCostInComparisionCurrency = meeting.meetingCost * conversionRate;
-            meeting.comparableMeetingCost = numberutil.roundToDecimals(meetingCostInComparisionCurrency, 5);
+            var meetingCostInComparisonCurrency = meeting.meetingCost * conversionRate;
+            meeting.comparableMeetingCost = numberutil.roundToDecimals(meetingCostInComparisonCurrency, 5);
         }
 
         meeting.duration = meeting.meetingCost / meeting.numberOfAttendees / meeting.averageHourlyRate * 3600;
@@ -36,7 +36,7 @@ function getPrettyMeetingDuration(meeting) {
     if (timeInHours >= 1) {
         var array = numberutil.roundToDecimals(timeInHours, 2).toString().split('.');
         hours = parseInt(array[0]);
-        minutes = parseInt(array[1]);
+        minutes = numberutil.roundToDecimals(parseInt(array[1]) * 0.6, 0);
         prettyMeetingDuration = hours + " h " + minutes + " min";
     } else if (timeInHours >= 0.01666666666667) {
         minutes = timeInHours * 60;
