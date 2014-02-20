@@ -29,6 +29,8 @@ exports.updateMeetingWithStuff = function (meetings, callback) {
     });
 }
 
+const decimalToTimeFactor = 0.6;
+
 function getPrettyMeetingDuration(meeting) {
     var prettyMeetingDuration = null;
     var timeInHours = meeting.meetingCost / meeting.numberOfAttendees / meeting.averageHourlyRate;
@@ -36,7 +38,7 @@ function getPrettyMeetingDuration(meeting) {
     if (timeInHours >= 1) {
         var array = numberutil.roundToDecimals(timeInHours, 2).toString().split('.');
         hours = parseInt(array[0]);
-        minutes = numberutil.roundToDecimals(parseInt(array[1]) * 0.6, 0);
+        minutes = numberutil.roundToDecimals(parseInt(array[1]) * decimalToTimeFactor, 0);
         prettyMeetingDuration = hours + " h " + minutes + " min";
     } else if (timeInHours >= 0.01666666666667) {
         minutes = timeInHours * 60;
