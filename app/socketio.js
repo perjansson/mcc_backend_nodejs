@@ -39,6 +39,7 @@ module.exports = function (app) {
             meetingRepository.deleteMeetingById(meetingId, function (meeting) {
                 socket.emit('meeting delete response', meeting);
                 updateSocketClientsWithLatestTopList();
+                updateSocketClientsWithRunningMeetings();
             }, function (errorMessage) {
                 socket.emit('meeting delete error', errorMessage);
             });
