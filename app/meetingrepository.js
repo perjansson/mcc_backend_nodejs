@@ -31,6 +31,8 @@ exports.saveMeeting = function (meeting, successCallback, failureCallback) {
         logger.log('Generated new id: ' + meeting.id);
     }
 
+    meeting.lastUpdatedAtTimeStamp = new Date().getTime();
+
     db.save(meeting.id, meeting, function (err, res) {
         if (err) {
             var errorMessage = JSON.stringify(err);
@@ -75,10 +77,22 @@ exports.deleteMeetingById = function (meetingId, successCallback, failureCallbac
 
 exports.getTopList = function (successCallback) {
     db.view(nconf.get('db_view_top_list'), function (err, res) {
-        var meetings = [];
-        res.forEach(function (meeting) {
-            meetings.push(meeting);
-        });
+        var meetings = createArrayOfMeetings(res);
         successCallback(meetings);
     });
 };
+
+exports.getRunningMeetings = function (successCallback) {
+    db.view(nconf.get('db_view_running_meetings'), function (err, res) {
+        var meetings = createArrayOfMeetings(res);
+        successCallback(meetings);
+    })
+}
+
+function createArrayOfMeetings(res) {
+    var meetings = [];
+    res.forEach(function (meeting) {
+        meetings.push(meeting);
+    });
+    return meetings;
+}

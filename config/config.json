@@ -4,5 +4,6 @@
     "db_password" : "8sP50bjSk3",
     "db_name" : "mcc",
     "db_view_top_list" : "mcc/findallwithnameandmeetingcost",
+    "db_view_running_meetings" : "mcc/findallrunning",
     "comparable_currency" : "BTC"
 }

@@ -16,7 +16,9 @@ module.exports = function (app) {
                 meetingStuffUpdater.updateMeetingWithStuff(meetings, function (updatedMeetings) {
                     io.sockets.emit('meeting update response', updatedMeetings[0]);
                 });
+                // TODO: Only update all socket clients if meeting is stopped.
                 updateSocketClientsWithLatestTopList();
+                updateSocketClientsWithRunningMeetings();
             }, function (errorMessage) {
                 socket.emit('meeting error', errorMessage);
             });
@@ -46,10 +48,22 @@ module.exports = function (app) {
             updateSocketClientsWithLatestTopList();
         });
 
+        socket.on('running meetings request', function () {
+            updateSocketClientsWithRunningMeetings();
+        });
+
         function updateSocketClientsWithLatestTopList() {
             meetingRepository.getTopList(function (meetings) {
                 meetingStuffUpdater.updateMeetingWithStuff(meetings, function (updatedMeetings) {
                     io.sockets.emit('top list update response', updatedMeetings);
+                });
+            });
+        }
+
+        function updateSocketClientsWithRunningMeetings() {
+            meetingRepository.getRunningMeetings(function (meetings) {
+                meetingStuffUpdater.updateMeetingWithStuff(meetings, function (updatedMeetings) {
+                    io.sockets.emit('running meetings update response', updatedMeetings);
                 });
             });
         }
