@@ -32,8 +32,12 @@ exports.updateMeetingWithStuff = function (meetings, callback) {
 const decimalToTimeFactor = 0.6;
 
 function getPrettyMeetingDuration(meeting) {
-    var prettyMeetingDuration = null;
     var timeInHours = meeting.meetingCost / meeting.numberOfAttendees / meeting.averageHourlyRate;
+    return timeInHoursToPrettyMeetingDuration(timeInHours);
+}
+
+function timeInHoursToPrettyMeetingDuration(timeInHours) {
+    var prettyMeetingDuration = null;
     var hours, minutes, seconds = null;
     if (timeInHours >= 1) {
         var array = numberutil.roundToDecimals(timeInHours, 2).toString().split('.');
