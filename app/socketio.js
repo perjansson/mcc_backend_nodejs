@@ -14,7 +14,8 @@ module.exports = function (app) {
             var meeting = JSON.parse(meetingAsString);
             meetingRepository.saveMeeting(meeting, function (meeting) {var meetings = [meeting];
                 meetingStuffUpdater.updateMeetingWithStuff(meetings, function (updatedMeetings) {
-                    io.sockets.emit('meeting update response', updatedMeetings[0]);
+                    socket.emit('meeting update response', updatedMeetings[0]);
+                    io.sockets.emit('some meeting update response', updatedMeetings[0]);
                 });
                 // TODO: Only update all socket clients if meeting is stopped.
                 updateSocketClientsWithLatestTopList();
